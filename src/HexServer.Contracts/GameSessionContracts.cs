@@ -46,6 +46,7 @@ public sealed record JoinSessionRequest(
     HexResourceId DeckTemplateId,
     int PlayerPosition,
     ulong ChampionId,
+    bool SecondChance,
     IReadOnlyList<int> SelfTurnPhases,
     IReadOnlyList<int> OpponentTurnPhases);
 
@@ -65,7 +66,7 @@ public sealed record ReadyForGameSetupRequest(
     Guid RequestHandlerSessionId,
     int OriginClusterHash,
     HexUid PlayerId,
-    HexUid SessionId,
+    bool SecondChance,
     IReadOnlyList<int> SelfTurnPhases,
     IReadOnlyList<int> OpponentTurnPhases);
 
@@ -78,8 +79,7 @@ public sealed record ReadyForGameSetupResponse(
 public sealed record ReadyForGameEventsRequest(
     Guid RequestHandlerSessionId,
     int OriginClusterHash,
-    HexUid PlayerId,
-    HexUid SessionId);
+    HexUid PlayerId);
 
 public sealed record ReadyForGameEventsResponse(
     Guid RequestHandlerSessionId,
