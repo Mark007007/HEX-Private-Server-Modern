@@ -23,6 +23,12 @@ jobs:
       - name: Restore tests
         run: dotnet restore tests/HexServer.Protocol.Tests/HexServer.Protocol.Tests.csproj
 
+      - name: Restore extractor
+        run: dotnet restore tools/HexExtractor/HexExtractor.csproj
+
+      - name: Restore legacy probe
+        run: dotnet restore tools/LegacyLoadProbe/LegacyLoadProbe.csproj
+
       - name: Build server
         run: dotnet build src/HexServer.Server/HexServer.Server.csproj -c Release --no-restore
 
