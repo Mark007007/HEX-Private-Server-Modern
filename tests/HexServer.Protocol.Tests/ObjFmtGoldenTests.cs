@@ -15,7 +15,7 @@ public sealed class ObjFmtGoldenTests
         var bytes = builder.Finish(1);
 
         Assert.Equal(
-            ";0;0;01;Value;1;1;0;01000000;Test.Basic;System.Int32\n29;21",
+            ";0;0;1;Value;1;1;0;01000000;Test.Basic;System.Int32\n28;21",
             Encoding.ASCII.GetString(bytes));
     }
 
