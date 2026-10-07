@@ -208,18 +208,149 @@ public sealed class ObjFmtBuilder
         string sessionName,
         int minPlayers,
         int maxPlayers,
+        Guid sceneTemplateId,
+        int sessionFlags,
+        ulong sessionUid,
+        IReadOnlyList<ulong>? tournamentPlayerIds = null,
+        ulong firstPlayer = 0,
+        ulong tournamentId = 0,
+        ulong testDeckId = 0,
+        int aiDifficulty = 0,
         bool joinInsteadOfReconnect = false)
     {
         var start = _body.Position;
         var index = PushSize();
+
         WriteFieldHeader(name, index, "Game.Shared.SessionState", 6);
 
         FieldUid("SessionId", sessionId);
         FieldString("SessionName", sessionName);
         FieldInt("MinimumPlayerCount", minPlayers);
         FieldInt("MaximumPlayerCount", maxPlayers);
-        FieldNullClass("EncounterData", "Game.Shared.SessionStateEncounterData");
-        FieldBool("JoinInsteadOfReconnect", joinInsteadOfReconnect);
+
+        var encounterStart = _body.Position;
+        var encounterIndex = PushSize();
+        WriteFieldHeader(
+            "EncounterData",
+            encounterIndex,
+            "Game.Shared.SessionStateEncounterData",
+            16);
+
+        FieldResourceId(
+            "SceneTemplateId",
+            sceneTemplateId.ToString(),
+            memberNameIsGuid: false);
+
+        FieldResourceId(
+            "DungeonTemplateId",
+            Guid.Empty.ToString(),
+            memberNameIsGuid: false);
+
+        FieldResourceId(
+            "NodeTrackerId",
+            Guid.Empty.ToString(),
+            memberNameIsGuid: false);
+
+        FieldEnum(
+            "SessionFlags",
+            "Game.Shared.ESessionFlags",
+            sessionFlags);
+
+        FieldUid("SessionUID", sessionUid);
+
+        FieldEmptyList(
+            "TournamentDecks",
+            "System.Collections.Generic.List`#Game.Shared.Tournaments.TournamentDeckBitsWrapper");
+
+        FieldEmptyList(
+            "MatchPreviousWinners",
+            "System.Collections.Generic.List`#System.UInt64");
+
+        FieldUInt64List(
+            "TournamentPlayerIDs",
+            tournamentPlayerIds ?? Array.Empty<ulong>());
+
+        FieldEmptyList(
+            "DeckHash",
+            "System.Collections.Generic.List`#System.String");
+
+        FieldUid("FirstPlayer", firstPlayer);
+        FieldULong("ArenaInstance", 0);
+        FieldULong("ArenaOwner", 0);
+
+        FieldEmptyList(
+            "ParticipatingPlayers",
+            "System.Collections.Generic.List`#Game.Shared.RemotePlayer");
+
+        FieldULong("TournamentID", tournamentId);
+
+        FieldEnum(
+            "AiDifficulty",
+            "Game.Shared.AI.EDifficulty",
+            aiDifficulty);
+
+        FieldULong("TestDeckID", testDeckId);
+
+        SetSize(encounterIndex, encounterStart);
+
+        FieldBool(
+            "JoinInsteadOfReconnect",
+            joinInsteadOfReconnect);
+
+        SetSize(index, start);
+    }
+
+    public void FieldEmptyList(string name, string listTypeName)
+    {
+        var start = _body.Position;
+        var index = PushSize();
+
+        WriteFieldHeader(name, index, listTypeName, 0);
+        WriteText("0");
+        Separator();
+
+        SetSize(index, start);
+    }
+
+    public void FieldUInt64List(
+        string name,
+        IReadOnlyList<ulong> values)
+    {
+        var start = _body.Position;
+        var index = PushSize();
+
+        WriteFieldHeader(
+            name,
+            index,
+            "System.Collections.Generic.List`#System.UInt64",
+            0);
+
+        WriteText(values.Count.ToString(
+            System.Globalization.CultureInfo.InvariantCulture));
+        Separator();
+
+        for (var i = 0; i < values.Count; i++)
+        {
+            var itemStart = _body.Position;
+            var itemIndex = PushSize();
+
+            WriteText(i.ToString(
+                System.Globalization.CultureInfo.InvariantCulture));
+            Separator();
+            WriteText(itemIndex.ToString(
+                System.Globalization.CultureInfo.InvariantCulture));
+            Separator();
+            WriteText(
+                AddType("System.UInt64").ToString(
+                    System.Globalization.CultureInfo.InvariantCulture));
+            Separator();
+            WriteText("0");
+            Separator();
+            WriteText(ToHex(BitConverter.GetBytes(values[i])));
+            Separator();
+
+            SetSize(itemIndex, itemStart);
+        }
 
         SetSize(index, start);
     }
