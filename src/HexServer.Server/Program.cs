@@ -10,10 +10,12 @@ builder.Services.AddSingleton<GameSessionRegistry>();
 builder.Services.AddSingleton<ServiceRouter>(services =>
 {
     var router = new ServiceRouter();
+
     router.Register(
-        HexServer.Contracts.ServiceIds.GameSession,
-        new GameSessionServiceHandler(
+        HexServer.Contracts.ServiceIds.LoadBalancer,
+        new LoadBalancerServiceHandler(
             services.GetRequiredService<GameSessionRegistry>()));
+
     return router;
 });
 
@@ -45,7 +47,16 @@ app.MapGet("/protocol", () => Results.Ok(new
     body = "HEX DataWrapper / ObjFmt",
     services = new
     {
+        LoadBalancer = HexServer.Contracts.ServiceIds.LoadBalancer,
         GameSession = HexServer.Contracts.ServiceIds.GameSession
+    },
+    dataTypes = new
+    {
+        StartSession = HexServer.Contracts.LoadBalancerDataTypes.StartSession,
+        FindSession = HexServer.Contracts.LoadBalancerDataTypes.FindSession,
+        JoinSession = HexServer.Contracts.LoadBalancerDataTypes.JoinSession,
+        PlayerTransaction = HexServer.Contracts.GameSessionDataTypes.PlayerTransaction,
+        SessionSyncEvent = HexServer.Contracts.GameSessionDataTypes.SessionSyncEvent
     },
     defaultPort = 9933
 }));
