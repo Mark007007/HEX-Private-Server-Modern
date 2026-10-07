@@ -133,6 +133,9 @@ public sealed class HcpTcpServer : IAsyncDisposable
                         continue;
                     }
 
+                    session.Reliability.ObserveClientCounter(
+                        serviceRequest.ClientCounter);
+
                     var serviceResponse =
                         await _router.DispatchAsync(
                             serviceRequest,
@@ -161,6 +164,7 @@ public sealed class HcpTcpServer : IAsyncDisposable
                             connectionHandle: serviceRequest.ConnectionHandle,
                             sessionId: sessionId,
                             serverCounter: session.Reliability.NextServerCounter(),
+                            clientCounter: session.Reliability.ClientCounter,
                             requestHandlerSessionId:
                                 serviceRequest.RequestHandlerSessionId,
                             uncompressedResponsePayload:
