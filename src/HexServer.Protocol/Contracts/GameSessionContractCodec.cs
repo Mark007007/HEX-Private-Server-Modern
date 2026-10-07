@@ -1,4 +1,3 @@
-using System.Text;
 using HexServer.Contracts;
 using HexServer.Protocol.ObjFmt;
 
@@ -23,6 +22,17 @@ public static class GameSessionContractCodec
             ReadBool(doc, "Observable"),
             new HexResourceId(ReadResourceGuid(doc, "FilterID")),
             ReadUInt64(doc, "TestDeckId"));
+    }
+
+    public static FindSessionRequest DecodeFindSession(ReadOnlySpan<byte> bytes)
+    {
+        var doc = ObjFmtDocument.Parse(bytes);
+
+        return new FindSessionRequest(
+            ReadGuid(doc, "RequestHandlerSessionId"),
+            ReadInt(doc, "OriginClusterHash"),
+            new HexUid(ReadUid(doc, "PlayerId")),
+            ReadString(doc, "SessionName"));
     }
 
     public static JoinSessionRequest DecodeJoinSession(ReadOnlySpan<byte> bytes)
@@ -91,9 +101,7 @@ public static class GameSessionContractCodec
 
     public static byte[] EncodeStartSessionResponse(StartSessionResponse value)
     {
-        var b = new ObjFmtBuilder(
-            "Game.Shared.Network.GameSession.StartSessionResponseArgs");
-
+        var b = new ObjFmtBuilder("Game.Shared.Network.GameSession.StartSessionResponseArgs");
         b.FieldGuid("RequestHandlerSessionId", value.RequestHandlerSessionId);
         b.FieldInt("OriginClusterHash", value.OriginClusterHash);
         b.FieldUid("RoutingPlayerId", value.RoutingPlayerId.Value);
@@ -105,7 +113,6 @@ public static class GameSessionContractCodec
             value.MinimumPlayerCount,
             value.MaximumPlayerCount,
             value.JoinInsteadOfReconnect);
-
         return b.Finish(5);
     }
 
@@ -120,9 +127,7 @@ public static class GameSessionContractCodec
         int maximumPlayerCount,
         bool joinInsteadOfReconnect = false)
     {
-        var b = new ObjFmtBuilder(
-            "Game.Shared.Network.GameSession.FindSessionResponseArgs");
-
+        var b = new ObjFmtBuilder("Game.Shared.Network.GameSession.FindSessionResponseArgs");
         b.FieldGuid("RequestHandlerSessionId", requestHandlerSessionId);
         b.FieldInt("OriginClusterHash", originClusterHash);
         b.FieldUid("RoutingPlayerId", routingPlayerId);
@@ -134,15 +139,12 @@ public static class GameSessionContractCodec
             minimumPlayerCount,
             maximumPlayerCount,
             joinInsteadOfReconnect);
-
         return b.Finish(5);
     }
 
     public static byte[] EncodeJoinSessionResponse(JoinSessionResponse value)
     {
-        var b = new ObjFmtBuilder(
-            "Game.Shared.Network.GameSession.JoinSessionResponseArgs");
-
+        var b = new ObjFmtBuilder("Game.Shared.Network.GameSession.JoinSessionResponseArgs");
         b.FieldGuid("RequestHandlerSessionId", value.RequestHandlerSessionId);
         b.FieldInt("OriginClusterHash", value.OriginClusterHash);
         b.FieldUid("RoutingPlayerId", value.RoutingPlayerId.Value);
@@ -155,7 +157,6 @@ public static class GameSessionContractCodec
             value.MaximumPlayerCount,
             value.JoinInsteadOfReconnect);
         b.FieldPlayerStateList("SessionPlayers", value.SessionPlayers);
-
         return b.Finish(6);
     }
 
@@ -201,9 +202,7 @@ public static class GameSessionContractCodec
                 item.PropertyCount,
                 item.Payload);
 
-            foreach (var nested in ObjFmtDocument.ReadNestedFields(
-                         element,
-                         doc.Sizes))
+            foreach (var nested in ObjFmtDocument.ReadNestedFields(element, doc.Sizes))
             {
                 if (nested.Name is "m_Guid" or "Guid")
                     result.Add(new HexRemotePlayer(HexFieldReader.ReadGuid(nested)));
@@ -229,10 +228,7 @@ public static class GameSessionContractCodec
                 item.PropertyCount,
                 item.Payload);
 
-            values.Add(
-                HexFieldReader.ReadEnumValue(
-                    element,
-                    doc.Sizes));
+            values.Add(HexFieldReader.ReadEnumValue(element, doc.Sizes));
         }
 
         return values;
