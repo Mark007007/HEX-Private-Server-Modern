@@ -59,7 +59,7 @@ public sealed class ObjFmtDocument
         var rootTypeIndex = cursor.ReadIntToken("root type index");
         var rootPropertyCount = cursor.ReadIntToken("root property count");
 
-        if (rootTypeIndex < 0 || rootTypeIndex >= types.Count)
+        if (rootTypeIndex < 0 || rootTypeIndex >= types.Length)
             throw new InvalidDataException("ObjFmt root type index is outside type table.");
 
         var fields = ReadFields(
