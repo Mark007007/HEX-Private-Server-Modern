@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\\HexServer.Core\\HexServer.Core.csproj" />
+    <ProjectReference Include="..\\HexServer.Contracts\\HexServer.Contracts.csproj" />
+  </ItemGroup>
+</Project>
