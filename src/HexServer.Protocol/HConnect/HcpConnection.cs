@@ -15,42 +15,62 @@ public sealed class HcpConnection : IAsyncDisposable
     }
 
     public async IAsyncEnumerable<HcpFrame> ReadFramesAsync(
-        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        [System.Runtime.CompilerServices.EnumeratorCancellation]
+        CancellationToken cancellationToken = default)
     {
         while (true)
         {
-            var result = await _reader.ReadAsync(cancellationToken).ConfigureAwait(false);
-            var buffer = result.Buffer;
-            try
-            {
-                while (HcpCodec.TryDecode(buffer, out var frame, out var consumed))
-                {
-                    buffer = buffer.Slice(consumed);
-                    yield return frame;
-                }
+            var result = await _reader.ReadAsync(cancellationToken)
+                .ConfigureAwait(false);
 
-                _reader.AdvanceTo(buffer.Start, buffer.End);
-                if (result.IsCompleted)
-                {
-                    if (buffer.Length != 0)
-                        throw new EndOfStreamException("Stream ended in the middle of an HCP frame.");
-                    yield break;
-                }
-            }
-            catch
+            var buffer = result.Buffer;
+            var sawFrame = false;
+
+            while (HcpCodec.TryDecode(
+                buffer,
+                out var frame,
+                out var consumed))
             {
-                _reader.AdvanceTo(buffer.Start, buffer.Start);
-                throw;
+                sawFrame = true;
+                buffer = buffer.Slice(consumed);
+                _reader.AdvanceTo(buffer.Start, buffer.End);
+                yield return frame;
+
+                if (result.IsCompleted && buffer.Length == 0)
+                    yield break;
+
+                if (buffer.Length == 0)
+                    break;
+            }
+
+            if (!sawFrame)
+            {
+                _reader.AdvanceTo(buffer.Start, buffer.End);
+            }
+
+            if (result.IsCompleted)
+            {
+                if (buffer.Length != 0)
+                    throw new EndOfStreamException(
+                        "Stream ended in the middle of an HCP frame.");
+
+                yield break;
             }
         }
     }
 
-    public async ValueTask WriteFrameAsync(HcpFrame frame, CancellationToken cancellationToken = default)
+    public async ValueTask WriteFrameAsync(
+        HcpFrame frame,
+        CancellationToken cancellationToken = default)
     {
         var bytes = HcpCodec.Encode(frame);
+
         bytes.CopyTo(_writer.GetSpan(bytes.Length));
         _writer.Advance(bytes.Length);
-        var flush = await _writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+
+        var flush = await _writer.FlushAsync(cancellationToken)
+            .ConfigureAwait(false);
+
         if (flush.IsCanceled)
             throw new OperationCanceledException(cancellationToken);
     }
