@@ -51,13 +51,12 @@ public sealed class LoadBalancerServiceHandler : IServiceHandler
             value.RequestHandlerSessionId,
             value.OriginClusterHash,
             value.PlayerId,
-            Success: true,
+            true,
             session.SessionId,
             session.Name,
             session.MinimumPlayers,
             session.MaximumPlayers,
-            JoinInsteadOfReconnect: false,
-            value.SessionFlags);
+            false);
 
         return new ServiceResponse(
             request.DataType,
@@ -79,7 +78,7 @@ public sealed class LoadBalancerServiceHandler : IServiceHandler
                 value.RequestHandlerSessionId,
                 value.OriginClusterHash,
                 value.PlayerId.Value,
-                Success: false,
+                success: false,
                 sessionId: 0,
                 sessionName: value.SessionName,
                 minimumPlayerCount: 0,
@@ -88,7 +87,7 @@ public sealed class LoadBalancerServiceHandler : IServiceHandler
                 value.RequestHandlerSessionId,
                 value.OriginClusterHash,
                 value.PlayerId.Value,
-                Success: true,
+                success: true,
                 sessionId: session.SessionId.Value,
                 sessionName: session.Name,
                 minimumPlayerCount: session.MinimumPlayers,
@@ -127,8 +126,9 @@ public sealed class LoadBalancerServiceHandler : IServiceHandler
             session?.Name ?? string.Empty,
             session?.MinimumPlayers ?? 0,
             session?.MaximumPlayers ?? 0,
-            JoinInsteadOfReconnect: false,
-            session?.Players ?? Array.Empty<(ulong, int)>());
+            false,
+            session?.Players ??
+                Array.Empty<(ulong PlayerId, int Position)>());
 
         return new ServiceResponse(
             request.DataType,
