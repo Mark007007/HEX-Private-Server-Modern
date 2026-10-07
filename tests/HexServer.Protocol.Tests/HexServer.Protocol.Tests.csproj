@@ -5,7 +5,7 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="....srcHexServer.ProtocolHexServer.Protocol.csproj" />
+    <ProjectReference Include="../../src/HexServer.Protocol/HexServer.Protocol.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
