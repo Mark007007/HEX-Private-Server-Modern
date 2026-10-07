@@ -4,61 +4,28 @@ using System.Text;
 namespace HexServer.Protocol.ObjFmt;
 
 /// <summary>
-/// Behavioural port of the HEX CUSTOM ObjFmt writer.
-/// This class intentionally implements only primitive/struct/list patterns
-/// already reconstructed from the original client/server code. More complex
-/// generated contracts should be added only after golden-byte verification.
+/// Behavioural implementation of the reconstructed HEX CUSTOM ObjFmt writer.
+/// The wire layout is based on observed client IL and byte-for-byte fixtures.
 /// </summary>
 public sealed class ObjFmtBuilder
 {
-    private readonly MemoryStream _buffer = new();
-    private readonly List<long> _sizes = new();
+    private readonly MemoryStream _body = new();
+    private readonly List<long> _sizes = new() { 0 };
     private readonly List<string> _types = new();
-    private readonly long _rootPropsPosition;
     private readonly int _rootTypeIndex;
 
     public ObjFmtBuilder(string rootType)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(rootType);
-
         _rootTypeIndex = AddType(rootType);
-        WriteText("");
-        Separator();
-        WriteText("0");
-        Separator();
-        WriteText(_rootTypeIndex.ToString(System.Globalization.CultureInfo.InvariantCulture));
-        Separator();
-
-        _rootPropsPosition = _buffer.Position;
-        WriteText("00");
-        Separator();
-
-        _sizes.Add(0);
     }
 
     public IReadOnlyList<string> Types => _types;
     public IReadOnlyList<long> Sizes => _sizes;
 
-    public void SetRootPropertyCount(int count)
-    {
-        if (count < 0)
-            throw new ArgumentOutOfRangeException(nameof(count));
-
-        var save = _buffer.Position;
-        _buffer.Position = _rootPropsPosition;
-
-        var text = count.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        if (text.Length < 2)
-            text = "0" + text;
-
-        WriteText(text);
-        Separator();
-        _buffer.Position = save;
-    }
-
     public void FieldInt(string name, int value)
     {
-        var start = _buffer.Position;
+        var start = _body.Position;
         var index = PushSize();
         WriteFieldHeader(name, index, "System.Int32", 0);
         WriteText(Convert.ToHexString(BitConverter.GetBytes(value)));
@@ -68,7 +35,7 @@ public sealed class ObjFmtBuilder
 
     public void FieldUInt(string name, uint value)
     {
-        var start = _buffer.Position;
+        var start = _body.Position;
         var index = PushSize();
         WriteFieldHeader(name, index, "System.UInt32", 0);
         WriteText(Convert.ToHexString(BitConverter.GetBytes(value)));
@@ -78,7 +45,7 @@ public sealed class ObjFmtBuilder
 
     public void FieldLong(string name, long value)
     {
-        var start = _buffer.Position;
+        var start = _body.Position;
         var index = PushSize();
         WriteFieldHeader(name, index, "System.Int64", 0);
         WriteText(Convert.ToHexString(BitConverter.GetBytes(value)));
@@ -88,7 +55,7 @@ public sealed class ObjFmtBuilder
 
     public void FieldULong(string name, ulong value)
     {
-        var start = _buffer.Position;
+        var start = _body.Position;
         var index = PushSize();
         WriteFieldHeader(name, index, "System.UInt64", 0);
         WriteText(Convert.ToHexString(BitConverter.GetBytes(value)));
@@ -98,7 +65,7 @@ public sealed class ObjFmtBuilder
 
     public void FieldByte(string name, byte value)
     {
-        var start = _buffer.Position;
+        var start = _body.Position;
         var index = PushSize();
         WriteFieldHeader(name, index, "System.Byte", 0);
         WriteText(value.ToString("X2", System.Globalization.CultureInfo.InvariantCulture));
@@ -108,7 +75,7 @@ public sealed class ObjFmtBuilder
 
     public void FieldBool(string name, bool value)
     {
-        var start = _buffer.Position;
+        var start = _body.Position;
         var index = PushSize();
         WriteFieldHeader(name, index, "System.Boolean", 0);
         WriteText(value ? "1" : "0");
@@ -118,69 +85,65 @@ public sealed class ObjFmtBuilder
     public void FieldString(string name, string value)
     {
         ArgumentNullException.ThrowIfNull(value);
-
-        var start = _buffer.Position;
+        var start = _body.Position;
         var index = PushSize();
         WriteFieldHeader(name, index, "System.String", 0);
         var bytes = Encoding.UTF8.GetBytes(value);
         WriteText(bytes.Length.ToString(System.Globalization.CultureInfo.InvariantCulture));
         Separator();
-        _buffer.Write(bytes);
+        _body.Write(bytes);
         SetSize(index, start);
     }
 
-    public void FieldGuid(string name, Guid value)
-        => FieldGuid(name, value.ToString());
+    public void FieldGuid(string name, Guid value) => FieldGuid(name, value.ToString());
 
     public void FieldGuid(string name, string value)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(value);
-
-        var start = _buffer.Position;
+        var start = _body.Position;
         var index = PushSize();
         WriteFieldHeader(name, index, "System.Guid", 0);
         var bytes = Encoding.UTF8.GetBytes(value);
         WriteText(bytes.Length.ToString(System.Globalization.CultureInfo.InvariantCulture));
         Separator();
-        _buffer.Write(bytes);
+        _body.Write(bytes);
         SetSize(index, start);
     }
 
     public void FieldDateTime(string name, string invariantText)
     {
         ArgumentNullException.ThrowIfNull(invariantText);
-
-        var start = _buffer.Position;
+        var start = _body.Position;
         var index = PushSize();
         WriteFieldHeader(name, index, "System.DateTime", 0);
         var bytes = Encoding.UTF8.GetBytes(invariantText);
         WriteText(bytes.Length.ToString(System.Globalization.CultureInfo.InvariantCulture));
         Separator();
-        _buffer.Write(bytes);
+        _body.Write(bytes);
         SetSize(index, start);
     }
 
     public void FieldBytes(string name, ReadOnlySpan<byte> data)
     {
-        var start = _buffer.Position;
+        var start = _body.Position;
         var index = PushSize();
         WriteFieldHeader(name, index, "System.Byte[]", 0);
 
         Span<byte> length = stackalloc byte[4];
         BinaryPrimitives.WriteUInt32BigEndian(length, checked((uint)data.Length));
-        _buffer.Write(length);
-        _buffer.Write(data);
+        _body.Write(length);
+        _body.Write(data);
 
         SetSize(index, start);
     }
 
     public void FieldEnum(string name, string enumTypeName, int value)
     {
-        var start = _buffer.Position;
+        var start = _body.Position;
         var index = PushSize();
         WriteFieldHeader(name, index, enumTypeName, 1);
 
-        var subStart = _buffer.Position;
+        var subStart = _body.Position;
         var subIndex = PushSize();
         WriteFieldHeader("value__", subIndex, "System.Int32", 0);
         WriteText(Convert.ToHexString(BitConverter.GetBytes(value)));
@@ -191,11 +154,11 @@ public sealed class ObjFmtBuilder
 
     public void FieldUid(string name, ulong uid64)
     {
-        var start = _buffer.Position;
+        var start = _body.Position;
         var index = PushSize();
         WriteFieldHeader(name, index, "Game.Shared.UID", 1);
 
-        var subStart = _buffer.Position;
+        var subStart = _body.Position;
         var subIndex = PushSize();
         WriteFieldHeader("m_UID64", subIndex, "System.UInt64", 0);
         WriteText(Convert.ToHexString(BitConverter.GetBytes(uid64)));
@@ -204,19 +167,28 @@ public sealed class ObjFmtBuilder
         SetSize(index, start);
     }
 
-    public void FieldResourceId(string name, string guidText)
+    public void FieldResourceId(
+        string name,
+        string guidText,
+        bool memberNameIsGuid = true)
     {
-        var start = _buffer.Position;
+        var start = _body.Position;
         var index = PushSize();
         WriteFieldHeader(name, index, "Game.Shared.ResourceId", 1);
 
-        var subStart = _buffer.Position;
+        var subStart = _body.Position;
         var subIndex = PushSize();
-        WriteFieldHeader("guid", subIndex, "System.Guid", 0);
+        WriteFieldHeader(
+            memberNameIsGuid ? "guid" : "m_Guid",
+            subIndex,
+            "System.Guid",
+            0);
+
         var bytes = Encoding.UTF8.GetBytes(guidText);
         WriteText(bytes.Length.ToString(System.Globalization.CultureInfo.InvariantCulture));
         Separator();
-        _buffer.Write(bytes);
+        _body.Write(bytes);
+
         SetSize(subIndex, subStart);
         SetSize(index, start);
     }
@@ -226,7 +198,7 @@ public sealed class ObjFmtBuilder
         if (count < 0)
             throw new ArgumentOutOfRangeException(nameof(count));
 
-        var start = _buffer.Position;
+        var start = _body.Position;
         var index = PushSize();
         WriteFieldHeader(name, index, listTypeName, 0);
         WriteText(count.ToString(System.Globalization.CultureInfo.InvariantCulture));
@@ -237,8 +209,9 @@ public sealed class ObjFmtBuilder
 
     public void ListItemUInt64(int itemIndex, ulong value)
     {
-        var start = _buffer.Position;
+        var start = _body.Position;
         var index = PushSize();
+
         WriteText(itemIndex.ToString(System.Globalization.CultureInfo.InvariantCulture));
         Separator();
         WriteText(index.ToString(System.Globalization.CultureInfo.InvariantCulture));
@@ -249,20 +222,30 @@ public sealed class ObjFmtBuilder
         Separator();
         WriteText(Convert.ToHexString(BitConverter.GetBytes(value)));
         Separator();
+
         SetSize(index, start);
     }
 
-    public byte[] Finish(int? rootPropertyCount = null)
+    public byte[] Finish(int rootPropertyCount)
     {
-        if (rootPropertyCount.HasValue)
-            SetRootPropertyCount(rootPropertyCount.Value);
+        if (rootPropertyCount < 0)
+            throw new ArgumentOutOfRangeException(nameof(rootPropertyCount));
 
-        _sizes[0] = _buffer.Position;
-        WriteText(string.Join(";", _types));
-        _buffer.WriteByte((byte)'\n');
-        WriteText(string.Join(";", _sizes));
+        var body = _body.ToArray();
+        var rootHeader = Encoding.UTF8.GetBytes(
+            $";0;{_rootTypeIndex};{rootPropertyCount};");
 
-        return _buffer.ToArray();
+        _sizes[0] = rootHeader.Length + body.Length;
+
+        using var output = new MemoryStream();
+        output.Write(rootHeader);
+        output.Write(body);
+
+        WriteText(output, string.Join(";", _types));
+        output.WriteByte((byte)'\n');
+        WriteText(output, string.Join(";", _sizes));
+
+        return output.ToArray();
     }
 
     private int AddType(string typeName)
@@ -282,9 +265,13 @@ public sealed class ObjFmtBuilder
     }
 
     private void SetSize(int index, long start)
-        => _sizes[index] = _buffer.Position - start;
+        => _sizes[index] = _body.Position - start;
 
-    private void WriteFieldHeader(string name, int sizeIndex, string typeName, int propertyCount)
+    private void WriteFieldHeader(
+        string name,
+        int sizeIndex,
+        string typeName,
+        int propertyCount)
     {
         WriteText(name);
         Separator();
@@ -296,13 +283,12 @@ public sealed class ObjFmtBuilder
         Separator();
     }
 
-    private void WriteText(string text)
-    {
-        var bytes = Encoding.UTF8.GetBytes(text);
-        _buffer.Write(bytes);
-    }
+    private void WriteText(string text) => WriteText(_body, text);
 
-    private void Separator() => _buffer.WriteByte((byte)';');
+    private static void WriteText(Stream stream, string text)
+        => stream.Write(Encoding.UTF8.GetBytes(text));
+
+    private void Separator() => _body.WriteByte((byte)';');
 
     public readonly struct ListScope
     {
