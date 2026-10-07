@@ -52,21 +52,24 @@ public static class ServiceIds
     };
 }
 
-public static class GameSessionMethodIds
+public static class LoadBalancerDataTypes
 {
-    public const int TryReconnectionToDisconnectedGame = 3003;
-    public const int StartSession = 3005;
-    public const int StartEncounter = 3007;
-    public const int FindReconnectionInformation = 3009;
-    public const int FindSession = 3011;
-    public const int JoinDisconnectedGame = 3013;
-    public const int JoinSession = 3015;
-    public const int ReadyForGameSetup = 3019;
-    public const int LeaveSession = 3025;
-    public const int EndSession = 3027;
-    public const int GetSessionList = 3031;
-    public const int FindSessionById = 3047;
-    public const int SessionResync = 3049;
+    public const int StartSession = 22011;
+    public const int StartEncounter = 22013;
+    public const int FindSession = 22015;
+    public const int JoinSession = 22017;
+    public const int ReadyForGameSetup = 22019;
+    public const int ReadyForGameEvents = 22021;
+    public const int JoinDisconnectedGame = 22023;
+    public const int ReadyToContinueGame = 22025;
+    public const int LeaveSession = 22027;
+    public const int EndSession = 22029;
+    public const int GetSessionList = 22031;
+}
+
+public static class GameSessionDataTypes
+{
+    public const int PlayerTransaction = 3029;
     public const int PlayerAdded = 3050;
     public const int PlayerRemoved = 3051;
     public const int GameContinue = 3052;
