@@ -48,6 +48,7 @@ public static class GameSessionContractCodec
             new HexResourceId(ReadResourceGuid(doc, "DeckTemplateID")),
             ReadInt(doc, "PlayerPosition"),
             ReadUInt64(doc, "ChampionID"),
+            ReadBool(doc, "SecondChance"),
             ReadEnumList(doc, "SelfTurnPhases"),
             ReadEnumList(doc, "OpponentTurnPhases"));
     }
@@ -60,7 +61,7 @@ public static class GameSessionContractCodec
             ReadGuid(doc, "RequestHandlerSessionId"),
             ReadInt(doc, "OriginClusterHash"),
             new HexUid(ReadUid(doc, "PlayerId")),
-            new HexUid(ReadUid(doc, "SessionId")),
+            ReadBool(doc, "SecondChance"),
             ReadEnumList(doc, "SelfTurnPhases"),
             ReadEnumList(doc, "OpponentTurnPhases"));
     }
@@ -72,8 +73,7 @@ public static class GameSessionContractCodec
         return new ReadyForGameEventsRequest(
             ReadGuid(doc, "RequestHandlerSessionId"),
             ReadInt(doc, "OriginClusterHash"),
-            new HexUid(ReadUid(doc, "PlayerId")),
-            new HexUid(ReadUid(doc, "SessionId")));
+            new HexUid(ReadUid(doc, "PlayerId")));
     }
 
     public static ReadyToStartGameRequest DecodeReadyToStartGame(ReadOnlySpan<byte> bytes)
@@ -101,7 +101,7 @@ public static class GameSessionContractCodec
 
     public static byte[] EncodeStartSessionResponse(StartSessionResponse value)
     {
-        var b = new ObjFmtBuilder("Game.Shared.Network.GameSession.StartSessionResponseArgs");
+        var b = new ObjFmtBuilder("Game.Shared.Network.LoadBalancer.StartSessionResponseArgs");
         b.FieldGuid("RequestHandlerSessionId", value.RequestHandlerSessionId);
         b.FieldInt("OriginClusterHash", value.OriginClusterHash);
         b.FieldUid("RoutingPlayerId", value.RoutingPlayerId.Value);
@@ -130,7 +130,7 @@ public static class GameSessionContractCodec
         int maximumPlayerCount,
         bool joinInsteadOfReconnect = false)
     {
-        var b = new ObjFmtBuilder("Game.Shared.Network.GameSession.FindSessionResponseArgs");
+        var b = new ObjFmtBuilder("Game.Shared.Network.LoadBalancer.FindSessionResponseArgs");
         b.FieldGuid("RequestHandlerSessionId", requestHandlerSessionId);
         b.FieldInt("OriginClusterHash", originClusterHash);
         b.FieldUid("RoutingPlayerId", routingPlayerId);
@@ -150,7 +150,7 @@ public static class GameSessionContractCodec
 
     public static byte[] EncodeJoinSessionResponse(JoinSessionResponse value)
     {
-        var b = new ObjFmtBuilder("Game.Shared.Network.GameSession.JoinSessionResponseArgs");
+        var b = new ObjFmtBuilder("Game.Shared.Network.LoadBalancer.JoinSessionResponseArgs");
         b.FieldGuid("RequestHandlerSessionId", value.RequestHandlerSessionId);
         b.FieldInt("OriginClusterHash", value.OriginClusterHash);
         b.FieldUid("RoutingPlayerId", value.RoutingPlayerId.Value);
