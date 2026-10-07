@@ -112,7 +112,10 @@ public static class GameSessionContractCodec
             value.SessionName,
             value.MinimumPlayerCount,
             value.MaximumPlayerCount,
-            value.JoinInsteadOfReconnect);
+            sceneTemplateId: Guid.Empty,
+            sessionFlags: 0,
+            sessionUid: value.SessionId.Value,
+            joinInsteadOfReconnect: value.JoinInsteadOfReconnect);
         return b.Finish(5);
     }
 
@@ -138,7 +141,10 @@ public static class GameSessionContractCodec
             sessionName,
             minimumPlayerCount,
             maximumPlayerCount,
-            joinInsteadOfReconnect);
+            sceneTemplateId: Guid.Empty,
+            sessionFlags: 0,
+            sessionUid: sessionId,
+            joinInsteadOfReconnect: joinInsteadOfReconnect);
         return b.Finish(5);
     }
 
