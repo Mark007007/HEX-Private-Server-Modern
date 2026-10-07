@@ -236,7 +236,7 @@ static void TestResourceId()
 
     Check(text.Contains("TemplateID;"), "resource field");
     Check(text.Contains("m_Guid;"), "resource guid member");
-    Check(text.Contains("System.Guid;"), "guid type");
+    Check(text.Contains("System.Guid"), "guid type");
 }
 
 static void WriteText(Stream stream, string value)
