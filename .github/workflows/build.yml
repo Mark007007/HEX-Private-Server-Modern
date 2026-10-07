@@ -8,19 +8,32 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: "10.0.x"
 
-      - name: Restore
-        run: dotnet restore HexServer.Modern.sln
+      - name: Restore server
+        run: dotnet restore src/HexServer.Server/HexServer.Server.csproj
 
-      - name: Build
-        run: dotnet build HexServer.Modern.sln -c Release --no-restore
+      - name: Restore tests
+        run: dotnet restore tests/HexServer.Protocol.Tests/HexServer.Protocol.Tests.csproj
 
-      - name: Test
+      - name: Build server
+        run: dotnet build src/HexServer.Server/HexServer.Server.csproj -c Release --no-restore
+
+      - name: Build extractor
+        run: dotnet build tools/HexExtractor/HexExtractor.csproj -c Release --no-restore
+
+      - name: Build legacy probe
+        run: dotnet build tools/LegacyLoadProbe/LegacyLoadProbe.csproj -c Release --no-restore
+
+      - name: Build tests
+        run: dotnet build tests/HexServer.Protocol.Tests/HexServer.Protocol.Tests.csproj -c Release --no-restore
+
+      - name: Test protocol
         run: dotnet test tests/HexServer.Protocol.Tests/HexServer.Protocol.Tests.csproj -c Release --no-build --verbosity normal
