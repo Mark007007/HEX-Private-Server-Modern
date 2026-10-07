@@ -25,6 +25,7 @@ public sealed class HcpTcpServer : IAsyncDisposable
     public Task StartAsync(CancellationToken cancellationToken = default)
     {
         if (IsRunning) return Task.CompletedTask;
+
         IsRunning = true;
         _listener.Start();
         _ = AcceptLoopAsync(cancellationToken);
@@ -40,7 +41,8 @@ public sealed class HcpTcpServer : IAsyncDisposable
         {
             while (!linked.IsCancellationRequested)
             {
-                var client = await _listener.AcceptTcpClientAsync(linked.Token).ConfigureAwait(false);
+                var client = await _listener.AcceptTcpClientAsync(linked.Token)
+                    .ConfigureAwait(false);
                 _ = HandleClientAsync(client, linked.Token);
             }
         }
@@ -59,51 +61,56 @@ public sealed class HcpTcpServer : IAsyncDisposable
 
     private async Task HandleClientAsync(TcpClient client, CancellationToken cancellationToken)
     {
-        await using var _ = client.ConfigureAwait(false);
-        var connectionId = $"tcp-{Interlocked.Increment(ref _nextConnectionId)}";
-        await using var connection = new HcpConnection(client.GetStream());
-        var session = new HcpSession(connectionId);
-        session.BeginHandshake();
-
-        try
+        using (client)
+        await using (var connection = new HcpConnection(client.GetStream()))
         {
-            await foreach (var frame in connection.ReadFramesAsync(cancellationToken))
+            var connectionId = $"tcp-{Interlocked.Increment(ref _nextConnectionId)}";
+            var session = new HcpSession(connectionId);
+            session.BeginHandshake();
+
+            try
             {
-                var header = HcpHeaderCodec.Decode(frame.Header);
-                var message = new HcpMessage(header, frame.Body);
-
-                if (message.TryGetString("target", out var target) &&
-                    string.Equals(target, "newsession", StringComparison.Ordinal))
+                await foreach (var frame in connection.ReadFramesAsync(cancellationToken))
                 {
-                    var sid = _sessions.AllocateId();
-                    if (!_sessions.TryAdd(sid, session))
-                        throw new InvalidOperationException($"Could not register session {sid}.");
+                    var header = HcpHeaderCodec.Decode(frame.Header);
+                    var message = new HcpMessage(header, frame.Body);
 
-                    var response = session.BuildCreateResponse(sid);
-                    await connection.WriteFrameAsync(response, cancellationToken);
-                    continue;
+                    if (message.TryGetString("target", out var target) &&
+                        string.Equals(target, "newsession", StringComparison.Ordinal))
+                    {
+                        var sid = _sessions.AllocateId();
+
+                        if (!_sessions.TryAdd(sid, session))
+                            throw new InvalidOperationException(
+                                $"Could not register session {sid}.");
+
+                        var response = session.BuildCreateResponse(sid);
+                        await connection.WriteFrameAsync(response, cancellationToken);
+                        continue;
+                    }
+
+                    if (message.TryGetString("target", out target) &&
+                        string.Equals(target, "close", StringComparison.Ordinal))
+                        break;
+
+                    // Unknown targets remain unhandled until their real contract
+                    // is reconstructed from the client.
                 }
-
-                if (message.TryGetString("target", out target) &&
-                    string.Equals(target, "close", StringComparison.Ordinal))
-                    break;
-
-                // Protocol parsing is deliberately conservative here. Unknown messages
-                // are not interpreted until their service contract is recovered.
             }
-        }
-        catch (InvalidDataException)
-        {
-            // Malformed HCP connection: fail closed.
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-        }
-        finally
-        {
-            if (session.State.SessionId is ulong sid)
-                _sessions.TryRemove(sid);
-            session.State.Close();
+            catch (InvalidDataException)
+            {
+                // Fail closed on malformed protocol data.
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+            }
+            finally
+            {
+                if (session.State.SessionId is ulong sid)
+                    _sessions.TryRemove(sid);
+
+                session.State.Close();
+            }
         }
     }
 
