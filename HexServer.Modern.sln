@@ -14,6 +14,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HexServer.Server", "src\Hex
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HexServer.Protocol.Tests", "tests\HexServer.Protocol.Tests\HexServer.Protocol.Tests.csproj", "{10000000-0000-0000-0000-000000000006}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HexExtractor", "tools\HexExtractor\HexExtractor.csproj", "{10000000-0000-0000-0000-000000000007}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LegacyLoadProbe", "tools\LegacyLoadProbe\LegacyLoadProbe.csproj", "{10000000-0000-0000-0000-000000000008}"
+EndProject
 Global
     GlobalSection(SolutionConfigurationPlatforms) = preSolution
         Debug|Any CPU = Debug|Any CPU
@@ -26,11 +30,15 @@ Global
         {10000000-0000-0000-0000-000000000004}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
         {10000000-0000-0000-0000-000000000005}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
         {10000000-0000-0000-0000-000000000006}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {10000000-0000-0000-0000-000000000007}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+        {10000000-0000-0000-0000-000000000008}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
         {10000000-0000-0000-0000-000000000001}.Release|Any CPU.ActiveCfg = Release|Any CPU
         {10000000-0000-0000-0000-000000000002}.Release|Any CPU.ActiveCfg = Release|Any CPU
         {10000000-0000-0000-0000-000000000003}.Release|Any CPU.ActiveCfg = Release|Any CPU
         {10000000-0000-0000-0000-000000000004}.Release|Any CPU.ActiveCfg = Release|Any CPU
         {10000000-0000-0000-0000-000000000005}.Release|Any CPU.ActiveCfg = Release|Any CPU
         {10000000-0000-0000-0000-000000000006}.Release|Any CPU.ActiveCfg = Release|Any CPU
+        {10000000-0000-0000-0000-000000000007}.Release|Any CPU.ActiveCfg = Release|Any CPU
+        {10000000-0000-0000-0000-000000000008}.Release|Any CPU.ActiveCfg = Release|Any CPU
     EndGlobalSection
 EndGlobal
