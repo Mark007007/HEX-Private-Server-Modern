@@ -58,7 +58,7 @@ public sealed class GameSessionRegistry
     private readonly ConcurrentDictionary<ulong, GameSessionRecord> _sessions = new();
     private long _nextInstance = 1000;
 
-    public HexUid Create(
+    public GameSessionRecord Create(
         string name,
         int minimumPlayers,
         int maximumPlayers,
