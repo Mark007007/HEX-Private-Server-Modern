@@ -28,7 +28,7 @@ public sealed class ObjFmtBuilder
         var start = _body.Position;
         var index = PushSize();
         WriteFieldHeader(name, index, "System.Int32", 0);
-        WriteText(Convert.ToHexString(BitConverter.GetBytes(value)));
+        WriteText(ToHex(BitConverter.GetBytes(value)));
         Separator();
         SetSize(index, start);
     }
@@ -38,7 +38,7 @@ public sealed class ObjFmtBuilder
         var start = _body.Position;
         var index = PushSize();
         WriteFieldHeader(name, index, "System.UInt32", 0);
-        WriteText(Convert.ToHexString(BitConverter.GetBytes(value)));
+        WriteText(ToHex(BitConverter.GetBytes(value)));
         Separator();
         SetSize(index, start);
     }
@@ -48,7 +48,7 @@ public sealed class ObjFmtBuilder
         var start = _body.Position;
         var index = PushSize();
         WriteFieldHeader(name, index, "System.Int64", 0);
-        WriteText(Convert.ToHexString(BitConverter.GetBytes(value)));
+        WriteText(ToHex(BitConverter.GetBytes(value)));
         Separator();
         SetSize(index, start);
     }
@@ -58,7 +58,7 @@ public sealed class ObjFmtBuilder
         var start = _body.Position;
         var index = PushSize();
         WriteFieldHeader(name, index, "System.UInt64", 0);
-        WriteText(Convert.ToHexString(BitConverter.GetBytes(value)));
+        WriteText(ToHex(BitConverter.GetBytes(value)));
         Separator();
         SetSize(index, start);
     }
@@ -146,7 +146,7 @@ public sealed class ObjFmtBuilder
         var subStart = _body.Position;
         var subIndex = PushSize();
         WriteFieldHeader("value__", subIndex, "System.Int32", 0);
-        WriteText(Convert.ToHexString(BitConverter.GetBytes(value)));
+        WriteText(ToHex(BitConverter.GetBytes(value)));
         Separator();
         SetSize(subIndex, subStart);
         SetSize(index, start);
@@ -161,7 +161,7 @@ public sealed class ObjFmtBuilder
         var subStart = _body.Position;
         var subIndex = PushSize();
         WriteFieldHeader("m_UID64", subIndex, "System.UInt64", 0);
-        WriteText(Convert.ToHexString(BitConverter.GetBytes(uid64)));
+        WriteText(ToHex(BitConverter.GetBytes(uid64)));
         Separator();
         SetSize(subIndex, subStart);
         SetSize(index, start);
@@ -290,7 +290,7 @@ public sealed class ObjFmtBuilder
         Separator();
         WriteText("0");
         Separator();
-        WriteText(Convert.ToHexString(BitConverter.GetBytes(value)));
+        WriteText(ToHex(BitConverter.GetBytes(value)));
         Separator();
 
         SetSize(index, start);
@@ -359,6 +359,9 @@ public sealed class ObjFmtBuilder
         => stream.Write(Encoding.UTF8.GetBytes(text));
 
     private void Separator() => _body.WriteByte((byte)';');
+
+    private static string ToHex(ReadOnlySpan<byte> bytes)
+        => Convert.ToHexString(bytes).ToLowerInvariant();
 
     public readonly struct ListScope
     {
