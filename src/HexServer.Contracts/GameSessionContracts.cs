@@ -31,6 +31,12 @@ public sealed record StartSessionResponse(
     int MaximumPlayerCount,
     bool JoinInsteadOfReconnect);
 
+public sealed record FindSessionRequest(
+    Guid RequestHandlerSessionId,
+    int OriginClusterHash,
+    HexUid PlayerId,
+    string SessionName);
+
 public sealed record JoinSessionRequest(
     Guid RequestHandlerSessionId,
     int OriginClusterHash,
@@ -63,17 +69,33 @@ public sealed record ReadyForGameSetupRequest(
     IReadOnlyList<int> SelfTurnPhases,
     IReadOnlyList<int> OpponentTurnPhases);
 
-public sealed record ReadyToStartGameRequest(
+public sealed record ReadyForGameSetupResponse(
     Guid RequestHandlerSessionId,
     int OriginClusterHash,
-    HexUid PlayerId,
-    bool IsReady);
+    bool Success,
+    HexUid SessionId);
 
 public sealed record ReadyForGameEventsRequest(
     Guid RequestHandlerSessionId,
     int OriginClusterHash,
     HexUid PlayerId,
     HexUid SessionId);
+
+public sealed record ReadyForGameEventsResponse(
+    Guid RequestHandlerSessionId,
+    int OriginClusterHash,
+    int Result);
+
+public sealed record ReadyToStartGameRequest(
+    Guid RequestHandlerSessionId,
+    int OriginClusterHash,
+    HexUid PlayerId,
+    bool IsReady);
+
+public sealed record ReadyToStartGameResponse(
+    Guid RequestHandlerSessionId,
+    int OriginClusterHash,
+    int Result);
 
 public sealed record PlayerTransactionRequest(
     Guid RequestHandlerSessionId,
