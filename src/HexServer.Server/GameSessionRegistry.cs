@@ -80,7 +80,7 @@ public sealed class GameSessionRegistry
         if (!_sessions.TryAdd(id.Value, record))
             throw new InvalidOperationException("Could not register game session.");
 
-        return id;
+        return record;
     }
 
     public bool TryGet(HexUid id, out GameSessionRecord? record)
