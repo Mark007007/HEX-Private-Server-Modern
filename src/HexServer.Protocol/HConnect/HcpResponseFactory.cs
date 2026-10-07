@@ -17,6 +17,7 @@ public static class HcpResponseFactory
         int connectionHandle,
         ulong sessionId,
         long serverCounter,
+        long clientCounter,
         Guid requestHandlerSessionId,
         ReadOnlySpan<byte> uncompressedResponsePayload)
     {
@@ -45,7 +46,8 @@ public static class HcpResponseFactory
             ["c"] = compression,
             ["conh"] = connectionHandle,
             ["sid"] = sessionId,
-            ["scnt"] = serverCounter
+            ["scnt"] = serverCounter,
+            ["ccnt"] = clientCounter
         });
 
         return new HcpFrame(header, wrapper);
