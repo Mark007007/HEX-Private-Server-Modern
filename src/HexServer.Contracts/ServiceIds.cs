@@ -13,6 +13,43 @@ public static class ServiceIds
     public const int Mail = 252;
     public const int Campaign = 253;
     public const int LoadBalancer = 254;
+
+    public static bool TryFromTarget(string target, out int serviceId)
+    {
+        serviceId = target switch
+        {
+            "ServiceTournaments" => Tournaments,
+            "ServiceMonitor" => Monitor,
+            "ServiceProfile" => Profile,
+            "ServiceGameSession" => GameSession,
+            "ServiceMatchmaking" => Matchmaking,
+            "ServiceAI" => Ai,
+            "ServiceEscrow" => Escrow,
+            "ServiceGM" => Gm,
+            "ServiceMail" => Mail,
+            "ServiceCampaign" => Campaign,
+            "ServiceLoadBalancer" => LoadBalancer,
+            _ => 0
+        };
+
+        return serviceId != 0;
+    }
+
+    public static string ToTarget(int serviceId) => serviceId switch
+    {
+        Tournaments => "ServiceTournaments",
+        Monitor => "ServiceMonitor",
+        Profile => "ServiceProfile",
+        GameSession => "ServiceGameSession",
+        Matchmaking => "ServiceMatchmaking",
+        Ai => "ServiceAI",
+        Escrow => "ServiceEscrow",
+        Gm => "ServiceGM",
+        Mail => "ServiceMail",
+        Campaign => "ServiceCampaign",
+        LoadBalancer => "ServiceLoadBalancer",
+        _ => throw new KeyNotFoundException($"Unknown HEX service id: {serviceId}")
+    };
 }
 
 public static class GameSessionMethodIds
