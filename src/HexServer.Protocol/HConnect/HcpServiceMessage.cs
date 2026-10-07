@@ -18,40 +18,70 @@ public sealed record HcpServiceRequest(
 
 public static class HcpServiceMessage
 {
-    public static bool TryDecode(HcpMessage message, out HcpServiceRequest request)
+    public static bool TryDecode(
+        HcpMessage message,
+        out HcpServiceRequest request)
     {
         request = default!;
 
-        if (!message.TryGetString("target", out var target) ||
-            target is null ||
-            !ServiceIds.TryFromTarget(target, out var serviceId))
+        if (!message.Header.TryGetString("target", out var target) ||
+            target is null)
+        {
             return false;
+        }
 
-        if (!message.Header.Values.TryGetValue("reqid", out var reqNode) ||
+        if (!ServiceIds.TryFromTarget(
+                target,
+                out var serviceId))
+        {
+            return false;
+        }
+
+        if (!message.Header.Values.TryGetValue(
+                "reqid",
+                out var reqNode) ||
             !reqNode.TryGetInt64(out var requestId))
+        {
             return false;
+        }
 
-        var instance = message.Header.TryGetString("instance", out var instanceValue)
-            ? instanceValue ?? string.Empty
-            : string.Empty;
+        var instance =
+            message.Header.TryGetString("instance", out var instanceValue)
+                ? instanceValue ?? string.Empty
+                : string.Empty;
 
         var compression = (byte)0;
-        if (message.Header.Values.TryGetValue("c", out var cNode) &&
-            cNode.TryGetInt32(out var cValue) &&
+
+        if (message.Header.Values.TryGetValue(
+                "c",
+                out var cNode) &&
+            cNode.TryGetInt64(out var cValue) &&
             cValue is >= 0 and <= byte.MaxValue)
         {
             compression = (byte)cValue;
         }
 
-        var conh = message.Header.Values.TryGetValue("conh", out var conhNode) &&
-                   conhNode.TryGetInt32(out var handle)
-            ? handle
-            : 0;
+        var connectionHandle =
+            message.Header.Values.TryGetValue(
+                "conh",
+                out var conhNode) &&
+            conhNode.TryGetInt64(out var conhValue) &&
+            conhValue is >= int.MinValue and <= int.MaxValue
+                ? (int)conhValue
+                : 0;
 
-        ulong? sid = message.TryGetSessionId(out var sidValue) ? sidValue : null;
-        var clientCounter = message.TryGetClientCounter(out var ccnt) ? ccnt : 0;
+        ulong? sessionId =
+            message.Header.TryGetUInt64("sid", out var sidValue)
+                ? sidValue
+                : null;
+
+        var clientCounter =
+            message.Header.TryGetInt64("ccnt", out var ccntValue)
+                ? ccntValue
+                : 0;
 
         var wrapper = DataWrapperCodec.Decode(message.Body);
+
         var payload = DataWrapperCodec.DecodePayload(
             wrapper.Bytes,
             wrapper.Compression);
@@ -63,8 +93,8 @@ public static class HcpServiceMessage
             instance,
             requestId,
             compression,
-            conh,
-            sid,
+            connectionHandle,
+            sessionId,
             wrapper.RequestHandlerSessionId,
             clientCounter,
             payload);
