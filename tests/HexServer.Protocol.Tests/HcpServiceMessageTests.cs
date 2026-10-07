@@ -32,7 +32,7 @@ public sealed class HcpServiceMessageTests
 
         Assert.True(HcpServiceMessage.TryDecode(message, out var request));
         Assert.Equal(246, request.ServiceId);
-        Assert.Equal(3005, request.MethodId);
+        Assert.Equal(3005, request.DataType);
         Assert.Equal(2, request.RequestId);
         Assert.Equal((ulong)10001, request.SessionId);
     }
