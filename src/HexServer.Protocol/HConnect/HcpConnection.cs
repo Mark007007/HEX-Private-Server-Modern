@@ -24,38 +24,28 @@ public sealed class HcpConnection : IAsyncDisposable
                 .ConfigureAwait(false);
 
             var buffer = result.Buffer;
-            var sawFrame = false;
+            var frames = new List<HcpFrame>();
 
             while (HcpCodec.TryDecode(
                 buffer,
                 out var frame,
                 out var consumed))
             {
-                sawFrame = true;
+                frames.Add(frame);
                 buffer = buffer.Slice(consumed);
-                _reader.AdvanceTo(buffer.Start, buffer.End);
+            }
+
+            _reader.AdvanceTo(buffer.Start, buffer.End);
+
+            if (result.IsCompleted && buffer.Length != 0)
+                throw new EndOfStreamException(
+                    "Stream ended in the middle of an HCP frame.");
+
+            foreach (var frame in frames)
                 yield return frame;
 
-                if (result.IsCompleted && buffer.Length == 0)
-                    yield break;
-
-                if (buffer.Length == 0)
-                    break;
-            }
-
-            if (!sawFrame)
-            {
-                _reader.AdvanceTo(buffer.Start, buffer.End);
-            }
-
             if (result.IsCompleted)
-            {
-                if (buffer.Length != 0)
-                    throw new EndOfStreamException(
-                        "Stream ended in the middle of an HCP frame.");
-
                 yield break;
-            }
         }
     }
 
