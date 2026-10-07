@@ -5,11 +5,11 @@ using HexServer.Protocol.Services;
 
 namespace HexServer.Server;
 
-public sealed class GameSessionServiceHandler : IServiceHandler
+public sealed class LoadBalancerServiceHandler : IServiceHandler
 {
     private readonly GameSessionRegistry _sessions;
 
-    public GameSessionServiceHandler(GameSessionRegistry sessions)
+    public LoadBalancerServiceHandler(GameSessionRegistry sessions)
         => _sessions = sessions;
 
     public ValueTask<ServiceResponse> HandleAsync(
@@ -23,29 +23,29 @@ public sealed class GameSessionServiceHandler : IServiceHandler
             LoadBalancerDataTypes.StartSession =>
                 ValueTask.FromResult(HandleStartSession(request)),
 
-            GameSessionMethodIds.FindSession =>
+            LoadBalancerDataTypes.FindSession =>
                 ValueTask.FromResult(HandleFindSession(request)),
 
-            GameSessionMethodIds.JoinSession =>
+            LoadBalancerDataTypes.JoinSession =>
                 ValueTask.FromResult(HandleJoinSession(request)),
 
             _ => throw new NotSupportedException(
-                $"GameSession method {request.MethodId} is not implemented yet.")
+                $"LoadBalancer data type {request.DataType} is not implemented yet.")
         };
     }
 
-    private ServiceResponse HandleStartSession(HcpServiceRequest request)
+    private ServiceResponse HandleStartSession(
+        HcpServiceRequest request)
     {
         var value = GameSessionContractCodec.DecodeStartSession(
             request.Payload);
 
-        var existing = _sessions.FindByName(value.SessionName);
-
-        var session = existing ?? _sessions.Create(
-            value.SessionName,
-            value.MinPlayers,
-            value.MaxPlayers,
-            value.PlayerId.Value);
+        var session = _sessions.FindByName(value.SessionName)
+            ?? _sessions.Create(
+                value.SessionName,
+                value.MinPlayers,
+                value.MaxPlayers,
+                value.PlayerId.Value);
 
         var response = new StartSessionResponse(
             value.RequestHandlerSessionId,
@@ -56,16 +56,18 @@ public sealed class GameSessionServiceHandler : IServiceHandler
             session.Name,
             session.MinimumPlayers,
             session.MaximumPlayers,
-            JoinInsteadOfReconnect: false);
+            JoinInsteadOfReconnect: false,
+            value.SessionFlags);
 
         return new ServiceResponse(
-            request.MethodId,
+            request.DataType,
             value.PlayerId.Value,
             GameSessionContractCodec.EncodeStartSessionResponse(response),
             request.Compression);
     }
 
-    private ServiceResponse HandleFindSession(HcpServiceRequest request)
+    private ServiceResponse HandleFindSession(
+        HcpServiceRequest request)
     {
         var value = GameSessionContractCodec.DecodeFindSession(
             request.Payload);
@@ -87,19 +89,20 @@ public sealed class GameSessionServiceHandler : IServiceHandler
                 value.OriginClusterHash,
                 value.PlayerId.Value,
                 Success: true,
-                session.SessionId.Value,
-                session.Name,
-                session.MinimumPlayers,
-                session.MaximumPlayers);
+                sessionId: session.SessionId.Value,
+                sessionName: session.Name,
+                minimumPlayerCount: session.MinimumPlayers,
+                maximumPlayerCount: session.MaximumPlayers);
 
         return new ServiceResponse(
-            request.MethodId,
+            request.DataType,
             value.PlayerId.Value,
             payload,
             request.Compression);
     }
 
-    private ServiceResponse HandleJoinSession(HcpServiceRequest request)
+    private ServiceResponse HandleJoinSession(
+        HcpServiceRequest request)
     {
         var value = GameSessionContractCodec.DecodeJoinSession(
             request.Payload);
@@ -128,7 +131,7 @@ public sealed class GameSessionServiceHandler : IServiceHandler
             session?.Players ?? Array.Empty<(ulong, int)>());
 
         return new ServiceResponse(
-            request.MethodId,
+            request.DataType,
             value.PlayerId.Value,
             GameSessionContractCodec.EncodeJoinSessionResponse(response),
             request.Compression);
