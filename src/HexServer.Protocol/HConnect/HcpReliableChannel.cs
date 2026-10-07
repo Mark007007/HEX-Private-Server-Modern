@@ -1,39 +1,77 @@
 using System.Collections.Concurrent;
-using System.Text.Json;
-using HexServer.Core.Network;
 
 namespace HexServer.Protocol.HConnect;
 
 public sealed class HcpReliableChannel
 {
-    private readonly ConcurrentDictionary<long, HcpMessage> _sent = new();
-    private long _ccnt;
-    private long _scnt;
+    private readonly ConcurrentDictionary<long, HcpMessage> _serverSent = new();
+    private long _clientCounter;
+    private long _serverCounter;
 
-    public long ClientCounter => Interlocked.Read(ref _ccnt);
-    public long ServerCounter => Interlocked.Read(ref _scnt);
+    public long ClientCounter => Interlocked.Read(ref _clientCounter);
+    public long ServerCounter => Interlocked.Read(ref _serverCounter);
 
-    public long NextClientCounter() => Interlocked.Increment(ref _ccnt);
-    public long NextServerCounter() => Interlocked.Increment(ref _scnt);
+    public long NextServerCounter()
+        => Interlocked.Increment(ref _serverCounter);
 
-    public void TrackClientMessage(long ccnt, HcpMessage message) => _sent[ccnt] = message;
-
-    public bool TryGetSent(long ccnt, out HcpMessage? message) => _sent.TryGetValue(ccnt, out message);
-
-    public void AcknowledgeThrough(long ccnt)
+    public void ObserveClientCounter(long value)
     {
-        foreach (var key in _sent.Keys)
+        while (true)
         {
-            if (key <= ccnt)
-                _sent.TryRemove(key, out _);
+            var current = Interlocked.Read(ref _clientCounter);
+
+            if (value <= current)
+                return;
+
+            if (Interlocked.CompareExchange(
+                    ref _clientCounter,
+                    value,
+                    current) == current)
+            {
+                return;
+            }
         }
     }
 
-    public bool IsNextServerMessage(long receivedScnt)
+    public bool ObserveServerAcknowledgement(long value)
+    {
+        if (value < 0)
+            return false;
+
+        AcknowledgeServerThrough(value);
+        return true;
+    }
+
+    public void TrackServerMessage(
+        long scnt,
+        HcpMessage message)
+    {
+        if (scnt <= 0)
+            return;
+
+        _serverSent[scnt] = message;
+    }
+
+    public bool TryGetServerMessage(
+        long scnt,
+        out HcpMessage? message)
+        => _serverSent.TryGetValue(scnt, out message);
+
+    public void AcknowledgeServerThrough(long scnt)
+    {
+        foreach (var key in _serverSent.Keys)
+        {
+            if (key <= scnt)
+                _serverSent.TryRemove(key, out _);
+        }
+    }
+
+    public bool IsExpectedServerCounter(long receivedScnt)
         => receivedScnt == ServerCounter + 1;
 
-    public byte[] BuildResendRequest(long requestedCounter)
-        => HcpHeaderCodec.Encode(new Dictionary<string, object?>
+    public HcpFrame BuildResendRequest(long requestedCounter)
+    {
+        var header = HcpHeaderCodec.Encode(new Dictionary<string, object?>
         {
             ["target"] = "rsnd",
             ["instance"] = "req",
@@ -41,4 +79,7 @@ public sealed class HcpReliableChannel
             ["ccnt"] = ClientCounter,
             ["req"] = requestedCounter
         });
+
+        return new HcpFrame(header, Array.Empty<byte>());
+    }
 }
