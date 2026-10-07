@@ -1,0 +1,10 @@
+bin/
+obj/
+.vs/
+TestResults/
+artifacts/
+captures/*.raw
+logs/*
+data/*.db
+data/*.db-wal
+data/*.db-shm
