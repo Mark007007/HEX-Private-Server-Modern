@@ -161,7 +161,10 @@ public static class GameSessionContractCodec
             value.SessionName,
             value.MinimumPlayerCount,
             value.MaximumPlayerCount,
-            value.JoinInsteadOfReconnect);
+            sceneTemplateId: Guid.Empty,
+            sessionFlags: 0,
+            sessionUid: value.SessionId.Value,
+            joinInsteadOfReconnect: value.JoinInsteadOfReconnect);
         b.FieldPlayerStateList("SessionPlayers", value.SessionPlayers);
         return b.Finish(6);
     }
