@@ -15,10 +15,11 @@ public sealed class HcpCodecTests
             new byte[] { 0x01, 0x02, 0xA5, 0xFF });
 
         var wire = HcpCodec.Encode(frame);
+        var sequence = new ReadOnlySequence<byte>(wire);
 
         Assert.Equal("~HCP~", Encoding.ASCII.GetString(wire, 0, 5));
-        Assert.True(HcpCodec.TryDecode(new ReadOnlySequence<byte>(wire), out var decoded, out var consumed));
-        Assert.Equal(wire.Length, consumed.GetIntegerOffset());
+        Assert.True(HcpCodec.TryDecode(sequence, out var decoded, out var consumed));
+        Assert.Equal(sequence.GetPosition(wire.Length), consumed);
         Assert.Equal(frame.Header, decoded.Header);
         Assert.Equal(frame.Body, decoded.Body);
     }
@@ -39,13 +40,5 @@ public sealed class HcpCodecTests
 
         var partial = new ReadOnlySequence<byte>(wire.AsMemory(0, wire.Length - 1));
         Assert.False(HcpCodec.TryDecode(partial, out _, out _));
-    }
-}
-
-internal static class SequencePositionExtensions
-{
-    public static long GetIntegerOffset(this SequencePosition position)
-    {
-        return position.GetInteger();
     }
 }
