@@ -109,6 +109,8 @@ Console.WriteLine($"Methods  : {catalog.Types.Sum(static x => x.Methods.Length)}
 Console.WriteLine($"Refs     : {catalog.AssemblyReferences.Length}");
 Console.WriteLine($"Catalog  : {outputPath}");
 
+return 0;
+
 public sealed class AssemblyCatalog
 {
     public required string AssemblyName { get; init; }
@@ -124,5 +126,3 @@ public sealed record TypeCatalogEntry(
     string Name,
     string[] Fields,
     string[] Methods);
-
-return 0;
