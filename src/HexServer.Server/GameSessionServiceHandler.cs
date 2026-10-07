@@ -18,9 +18,9 @@ public sealed class GameSessionServiceHandler : IServiceHandler
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        return request.MethodId switch
+        return request.DataType switch
         {
-            GameSessionMethodIds.StartSession =>
+            LoadBalancerDataTypes.StartSession =>
                 ValueTask.FromResult(HandleStartSession(request)),
 
             GameSessionMethodIds.FindSession =>
