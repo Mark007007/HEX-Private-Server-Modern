@@ -13,6 +13,7 @@ public sealed record HcpServiceRequest(
     int ConnectionHandle,
     ulong? SessionId,
     Guid RequestHandlerSessionId,
+    long ClientCounter,
     byte[] Payload);
 
 public static class HcpServiceMessage
@@ -48,6 +49,7 @@ public static class HcpServiceMessage
             : 0;
 
         ulong? sid = message.TryGetSessionId(out var sidValue) ? sidValue : null;
+        var clientCounter = message.TryGetClientCounter(out var ccnt) ? ccnt : 0;
 
         var wrapper = DataWrapperCodec.Decode(message.Body);
         var payload = DataWrapperCodec.DecodePayload(
@@ -64,6 +66,7 @@ public static class HcpServiceMessage
             conh,
             sid,
             wrapper.RequestHandlerSessionId,
+            clientCounter,
             payload);
 
         return true;
