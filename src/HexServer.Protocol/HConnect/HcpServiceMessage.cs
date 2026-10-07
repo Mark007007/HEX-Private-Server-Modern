@@ -5,7 +5,7 @@ namespace HexServer.Protocol.HConnect;
 
 public sealed record HcpServiceRequest(
     int ServiceId,
-    int MethodId,
+    int DataType,
     string Target,
     string Instance,
     long RequestId,
