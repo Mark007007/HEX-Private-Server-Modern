@@ -229,7 +229,8 @@ static void TestResourceId()
     var builder = new ObjFmtBuilder("Test.Resource");
     builder.FieldResourceId(
         "TemplateID",
-        "00000000-0000-0000-0000-000000000000");
+        "00000000-0000-0000-0000-000000000000",
+        memberNameIsGuid: false);
 
     var text = Encoding.UTF8.GetString(builder.Finish(1));
 
