@@ -193,6 +193,76 @@ public sealed class ObjFmtBuilder
         SetSize(index, start);
     }
 
+
+    public void FieldNullClass(string name, string classTypeName)
+    {
+        var start = _body.Position;
+        var index = PushSize();
+        WriteFieldHeader(name, index, classTypeName, 0);
+        SetSize(index, start);
+    }
+
+    public void FieldSessionState(
+        string name,
+        ulong sessionId,
+        string sessionName,
+        int minPlayers,
+        int maxPlayers,
+        bool joinInsteadOfReconnect = false)
+    {
+        var start = _body.Position;
+        var index = PushSize();
+        WriteFieldHeader(name, index, "Game.Shared.SessionState", 6);
+
+        FieldUid("SessionId", sessionId);
+        FieldString("SessionName", sessionName);
+        FieldInt("MinimumPlayerCount", minPlayers);
+        FieldInt("MaximumPlayerCount", maxPlayers);
+        FieldNullClass("EncounterData", "Game.Shared.SessionStateEncounterData");
+        FieldBool("JoinInsteadOfReconnect", joinInsteadOfReconnect);
+
+        SetSize(index, start);
+    }
+
+    public void FieldPlayerStateList(
+        string name,
+        IReadOnlyList<(ulong PlayerId, int Position)> players)
+    {
+        var start = _body.Position;
+        var index = PushSize();
+
+        WriteFieldHeader(
+            name,
+            index,
+            "System.Collections.Generic.List`1#Game.Shared.PlayerState",
+            0);
+
+        WriteText(players.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        Separator();
+
+        for (var i = 0; i < players.Count; i++)
+        {
+            var elementStart = _body.Position;
+            var elementIndex = PushSize();
+
+            WriteText(i.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            Separator();
+            WriteText(elementIndex.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            Separator();
+            WriteText(AddType("Game.Shared.PlayerState").ToString(System.Globalization.CultureInfo.InvariantCulture));
+            Separator();
+            WriteText("2");
+            Separator();
+
+            FieldUid("PlayerId", players[i].PlayerId);
+            FieldInt("PlayerPosition", players[i].Position);
+
+            SetSize(elementIndex, elementStart);
+        }
+
+        SetSize(index, start);
+    }
+
     public ListScope BeginList(string name, string listTypeName, int count)
     {
         if (count < 0)
