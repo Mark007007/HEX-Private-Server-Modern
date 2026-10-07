@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>HexServer.Game</AssemblyName>
+    <RootNamespace>HexServer.Game</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HexServer.Core\HexServer.Core.csproj" />
+    <ProjectReference Include="..\HexServer.Contracts\HexServer.Contracts.csproj" />
+  </ItemGroup>
+</Project>
