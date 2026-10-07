@@ -1,5 +1,6 @@
 using HexServer.Contracts;
 using HexServer.Core.Network;
+using HexServer.Protocol.DataWrapper;
 
 namespace HexServer.Protocol.HConnect;
 
@@ -11,6 +12,7 @@ public static class HcpResponseFactory
         ulong clientUid,
         string instance,
         long requestId,
+        int dataType,
         byte compression,
         int connectionHandle,
         ulong sessionId,
@@ -19,16 +21,13 @@ public static class HcpResponseFactory
         ReadOnlySpan<byte> uncompressedResponsePayload)
     {
         var responseRequestId = requestId | 1L;
-        var bodyPayload = DataWrapper.DataWrapperCodec.EncodePayload(
+        var bodyPayload = DataWrapperCodec.EncodePayload(
             uncompressedResponsePayload,
             compression);
 
-        var wrapper = DataWrapper.DataWrapperCodec.Encode(
+        var wrapper = DataWrapperCodec.Encode(
             responseRequestId,
-            serviceUid == ServiceIds.GameSession ? requestId switch
-            {
-                _ => requestId >= 0 ? 0 : 0
-            } : 0,
+            dataType,
             bodyPayload,
             compression,
             requestHandlerSessionId);
