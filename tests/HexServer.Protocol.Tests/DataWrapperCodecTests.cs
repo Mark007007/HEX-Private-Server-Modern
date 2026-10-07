@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Text;
 using HexServer.Protocol.DataWrapper;
 using Xunit;
@@ -7,7 +8,7 @@ namespace HexServer.Protocol.Tests;
 public sealed class DataWrapperCodecTests
 {
     [Fact]
-    public void EncodeMatchesKnownGolden()
+    public void EncodeMatchesKnownGoldenByteForByte()
     {
         var bytes = DataWrapperCodec.Encode(
             1,
@@ -16,16 +17,41 @@ public sealed class DataWrapperCodecTests
             0,
             Guid.Empty);
 
-        var expectedBase64 =
-            "OzA7MDs1O1JlcXVlc3RJZDsxOzE7MDswMTAwMDAwMDAwMDAwMDAwO0RhdGFUeXBlOzI7MjswOzRmMDgwMDAwO0J5dGVzOzM7MzswOwAAABR0ZXN0IGJvZHkgcGF5bG9hZCA0MlJlcXVlc3RIYW5kbGVyU2Vzc2lvbklkOzQ7NDswOzM2OzAwMDAwMDAwLTAwMDAwLTAwMDAwLTAwMDAwMDAwMDAwMENvbXA7NTs1OzA7MDA7R2FtZS5TaGFyZWQuTmV0d29yay5EYXRhV3JhcHBlcjtTeXN0ZW0uSW50NjQ7U3lzdGVtLkludDMyO1N5c3RlbS5CeXRlW107U3lzdGVtLkd1aWQ7U3lzdGVtLkJ5dGUKMTgzOzMzOzI0OzM2OzY5OzE0";
+        using var expected = new MemoryStream();
 
-        Assert.Equal(
-            Convert.FromBase64String(expectedBase64),
-            bytes);
+        WriteText(expected, ";0;0;5;");
+        WriteText(expected, "RequestId;1;1;0;0100000000000000;");
+        WriteText(expected, "DataType;2;2;0;4f080000;");
+        WriteText(expected, "Bytes;3;3;0;");
+
+        Span<byte> payloadLength = stackalloc byte[4];
+        BinaryPrimitives.WriteUInt32BigEndian(payloadLength, 20);
+        expected.Write(payloadLength);
+        expected.Write(Encoding.UTF8.GetBytes("test body payload 42"));
+
+        WriteText(
+            expected,
+            "RequestHandlerSessionId;4;4;0;36;" +
+            "00000000-0000-0000-0000-000000000000");
+
+        WriteText(expected, "Comp;5;5;0;00;");
+
+        WriteText(
+            expected,
+            "Game.Shared.Network.DataWrapper;" +
+            "System.Int64;" +
+            "System.Int32;" +
+            "System.Byte[];" +
+            "System.Guid;" +
+            "System.Byte");
+        expected.WriteByte((byte)'\n');
+        WriteText(expected, "183;33;24;36;69;14");
+
+        Assert.Equal(expected.ToArray(), bytes);
     }
 
     [Fact]
-    public void DecodeGoldenRoundTripsFields()
+    public void DecodeRoundTripsFields()
     {
         var bytes = DataWrapperCodec.Encode(
             42,
@@ -52,4 +78,7 @@ public sealed class DataWrapperCodecTests
 
         Assert.Equal(original, restored);
     }
+
+    private static void WriteText(Stream stream, string value)
+        => stream.Write(Encoding.UTF8.GetBytes(value));
 }
