@@ -124,3 +124,5 @@ public sealed record TypeCatalogEntry(
     string Name,
     string[] Fields,
     string[] Methods);
+
+return 0;
