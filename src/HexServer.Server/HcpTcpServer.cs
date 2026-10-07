@@ -92,7 +92,7 @@ public sealed class HcpTcpServer : IAsyncDisposable
                     var header = HcpHeaderCodec.Decode(frame.Header);
                     var message = new HcpMessage(header, frame.Body);
 
-                    if (message.TryGetString("target", out var target))
+                    if (message.Header.TryGetString("target", out var target))
                     {
                         if (string.Equals(
                             target,
