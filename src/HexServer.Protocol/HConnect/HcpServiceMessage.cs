@@ -1,5 +1,3 @@
-using System.Text.Json;
-using HexServer.Core.Game;
 using HexServer.Contracts;
 using HexServer.Protocol.DataWrapper;
 
@@ -35,10 +33,13 @@ public static class HcpServiceMessage
             ? instanceValue ?? string.Empty
             : string.Empty;
 
-        var compression = message.Header.Values.TryGetValue("c", out var cNode) &&
-                          cNode.TryGetByte(out var c)
-            ? c
-            : (byte)0;
+        var compression = (byte)0;
+        if (message.Header.Values.TryGetValue("c", out var cNode) &&
+            cNode.TryGetInt32(out var cValue) &&
+            cValue is >= 0 and <= byte.MaxValue)
+        {
+            compression = (byte)cValue;
+        }
 
         var conh = message.Header.Values.TryGetValue("conh", out var conhNode) &&
                    conhNode.TryGetInt32(out var handle)
